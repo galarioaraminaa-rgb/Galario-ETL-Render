@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Galario ETL Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: #1e1e2e;
+      --accent: #00ff88;
+      --accent2: #7c3aed;
+      --accent3: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --danger: #ef4444;
+      --japan: #ff6b6b;
+      --myanmar: #4ecdc4;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* grid bg */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 10;
+      padding: 2rem 3rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(10px);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800;
+      color: #000;
+      font-size: 1.1rem;
+    }
+
+    .logo-text { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; }
+    .logo-text span { color: var(--accent); }
+
+    .status-pill {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    main {
+      position: relative;
+      z-index: 10;
+      padding: 2.5rem 3rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      margin-bottom: 3rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 500px;
+      line-height: 1.6;
+    }
+
+    /* ── PIPELINE STAGE CARDS ── */
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stage-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .stage-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(0,255,136,0.04), transparent 60%);
+      pointer-events: none;
+    }
+
+    .stage-card.active { border-color: var(--accent); }
+    .stage-card.done { border-color: #1e3a2e; }
+    .stage-card.error { border-color: var(--danger); }
+
+    .stage-number {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .stage-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 0.25rem;
+    }
+
+    .stage-desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .stage-status {
+      position: absolute;
+      top: 1.5rem; right: 1.5rem;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+    .stage-card.active .stage-status { background: var(--accent); animation: pulse 1s infinite; }
+    .stage-card.done .stage-status { background: var(--accent); }
+    .stage-card.error .stage-status { background: var(--danger); }
+
+    /* ── BIG RUN BUTTON ── */
+    .run-section {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    #runBtn {
+      position: relative;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      padding: 1rem 2.5rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: transform 0.15s, box-shadow 0.15s;
+      overflow: hidden;
+    }
+
+    #runBtn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px rgba(0,255,136,0.3);
+    }
+
+    #runBtn:active:not(:disabled) { transform: translateY(0); }
+
+    #runBtn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #runBtn .spinner {
+      display: none;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #runBtn.loading .spinner { display: inline-block; }
+    #runBtn.loading .btn-label::before { content: 'Running...'; }
+    #runBtn:not(.loading) .btn-label::before { content: '▶ Run ETL Pipeline'; }
+
+    .run-hint {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 280px;
+    }
+
+    /* ── LOG CONSOLE ── */
+    .console-wrap {
+      background: #070710;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    .console-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .console-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .console-dots { display: flex; gap: 6px; }
+    .console-dots span {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+
+    #console {
+      padding: 1.25rem 1.5rem;
+      min-height: 200px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.8;
+    }
+
+    .log-line { display: flex; gap: 1rem; align-items: flex-start; }
+    .log-tag {
+      min-width: 80px;
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: 700;
+    }
+    .log-tag.EXTRACT { background: rgba(124,58,237,0.2); color: var(--accent2); }
+    .log-tag.TRANSFORM { background: rgba(245,158,11,0.2); color: var(--accent3); }
+    .log-tag.LOAD { background: rgba(0,255,136,0.15); color: var(--accent); }
+    .log-tag.START, .log-tag.DONE { background: rgba(100,116,139,0.15); color: var(--muted); }
+    .log-tag.ERROR { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .log-msg { color: var(--text); flex: 1; }
+    .log-placeholder { color: var(--muted); }
+
+    /* ── DATA TABLE ── */
+    .table-section { margin-bottom: 2rem; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .badge {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-family: 'Space Mono', monospace;
+      color: var(--muted);
+    }
+
+    #previewBtn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    #previewBtn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    th {
+      background: #0d0d15;
+      padding: 0.8rem 1rem;
+      text-align: left;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid rgba(30,30,46,0.5);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    td.japan { color: var(--japan); }
+    td.myanmar { color: var(--myanmar); }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .empty-state p:first-child { font-size: 1.5rem; margin-bottom: 0.5rem; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 2rem; right: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      font-size: 0.9rem;
+      z-index: 1000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-width: 320px;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.error { border-color: var(--danger); }
+
+    @media (max-width: 768px) {
+      header { padding: 1.25rem 1.5rem; }
+      main { padding: 1.5rem; }
+      .pipeline { grid-template-columns: 1fr; }
+      .run-section { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">G</div>
+    <div class="logo-text">Galario <span>ETL</span></div>
+  </div>
+  <div class="status-pill">
+    <span class="dot"></span>
+    PostgreSQL · Render
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Extract. Transform.<br><em>Load.</em></h1>
+    <p>One-click ETL pipeline for Japan &amp; Myanmar store data into a unified PostgreSQL data warehouse.</p>
+  </div>
+
+  <!-- Pipeline stages -->
+  <div class="pipeline">
+    <div class="stage-card" id="stageExtract">
+      <div class="stage-number">STAGE 01</div>
+      <div class="stage-title">Extract</div>
+      <div class="stage-desc">Reads CSV files from Japan &amp; Myanmar store directories into staging tables.</div>
+      <div class="stage-status"></div>
+    </div>
+    <div class="stage-card" id="stageTransform">
+      <div class="stage-number">STAGE 02</div>
+      <div class="stage-title">Transform</div>
+      <div class="stage-desc">Cleans nulls, deduplicates, labels stores, and standardises Myanmar prices to JPY.</div>
+      <div class="stage-status"></div>
+    </div>
+    <div class="stage-card" id="stageLoad">
+      <div class="stage-number">STAGE 03</div>
+      <div class="stage-title">Load</div>
+      <div class="stage-desc">Merges cleaned datasets into the final <code>presentation_big_table</code>.</div>
+      <div class="stage-status"></div>
+    </div>
+  </div>
+
+  <!-- Run button -->
+  <div class="run-section">
+    <button id="runBtn" onclick="runETL()">
+      <span class="spinner"></span>
+      <span class="btn-label"></span>
+    </button>
+    <p class="run-hint">Triggers the full 3-stage pipeline. Logs stream below in real time.</p>
+  </div>
+
+  <!-- Console -->
+  <div class="console-wrap">
+    <div class="console-header">
+      <div class="console-dots">
+        <span style="background:#ef4444"></span>
+        <span style="background:#f59e0b"></span>
+        <span style="background:#00ff88"></span>
+      </div>
+      <div class="console-title">ETL OUTPUT LOG</div>
+      <div style="width:60px"></div>
+    </div>
+    <div id="console">
+      <div class="log-placeholder">$ Awaiting pipeline run…</div>
+    </div>
+  </div>
+
+  <!-- Preview table -->
+  <div class="table-section">
+    <div class="section-header">
+      <div class="section-title">
+        Big Table Preview
+        <span class="badge" id="rowCount">—</span>
+      </div>
+      <button id="previewBtn" onclick="loadPreview()">Load Preview</button>
+    </div>
+    <div class="table-wrap">
+      <div id="tableContainer">
+        <div class="empty-state">
+          <p>📦</p>
+          <p>Run the pipeline first, then click "Load Preview"</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show' + (isError ? ' error' : '');
+    setTimeout(() => t.className = '', 3500);
+  }
+
+  function appendLog(stage, message) {
+    const c = document.getElementById('console');
+    // Remove placeholder
+    const ph = c.querySelector('.log-placeholder');
+    if (ph) ph.remove();
+
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    line.innerHTML = `<span class="log-tag ${stage}">${stage}</span><span class="log-msg">${message}</span>`;
+    c.appendChild(line);
+    c.scrollTop = c.scrollHeight;
+  }
+
+  function setStage(extractDone, transformDone, loadDone, hasError) {
+    const stages = [
+      { el: document.getElementById('stageExtract'), done: extractDone },
+      { el: document.getElementById('stageTransform'), done: transformDone },
+      { el: document.getElementById('stageLoad'), done: loadDone },
+    ];
+    stages.forEach(s => {
+      s.el.classList.remove('active', 'done', 'error');
+      if (hasError) s.el.classList.add('error');
+      else if (s.done) s.el.classList.add('done');
+    });
+  }
+
+  async function runETL() {
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true;
+    btn.classList.add('loading');
+
+    document.getElementById('console').innerHTML = '';
+    setStage(false, false, false, false);
+    appendLog('START', 'Pipeline triggered…');
+
+    try {
+      const res = await fetch('/run-etl', { method: 'POST' });
+      const data = await res.json();
+
+      let extractDone = false, transformDone = false, loadDone = false;
+
+      data.logs.forEach(([stage, msg]) => {
+        appendLog(stage, msg);
+        if (stage === 'EXTRACT') extractDone = true;
+        if (stage === 'TRANSFORM') transformDone = true;
+        if (stage === 'LOAD') loadDone = true;
+      });
+
+      setStage(extractDone, transformDone, loadDone, !data.success);
+
+      if (data.success) {
+        showToast('✅ ETL pipeline completed successfully!');
+        loadPreview();
+      } else {
+        showToast('❌ Pipeline failed. Check logs.', true);
+      }
+    } catch (e) {
+      appendLog('ERROR', e.message);
+      showToast('❌ Network error: ' + e.message, true);
+    }
+
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+
+  async function loadPreview() {
+    try {
+      const res = await fetch('/preview');
+      const data = await res.json();
+
+      const container = document.getElementById('tableContainer');
+      const badge = document.getElementById('rowCount');
+
+      if (!data.records || data.records.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>📭</p><p>No data found. Run the pipeline first.</p></div>';
+        badge.textContent = '0 rows';
+        return;
+      }
+
+      badge.textContent = data.records.length + ' rows';
+
+      const cols = data.columns;
+      let html = '<table><thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+      data.records.forEach(row => {
+        const storeClass = row.store === 'Japan' ? 'japan' : row.store === 'Myanmar' ? 'myanmar' : '';
+        html += '<tr>' + cols.map(c => {
+          const val = row[c] !== null && row[c] !== undefined ? row[c] : '—';
+          const cls = c === 'store' ? storeClass : '';
+          return `<td class="${cls}">${val}</td>`;
+        }).join('') + '</tr>';
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    } catch (e) {
+      showToast('Could not load preview: ' + e.message, true);
+    }
+  }
+</script>
+</body>
+</html>
