@@ -1,0 +1,21 @@
+Name: Aramina P. Galario
+
+Insight 1: Higher Sales Activity in the Japan Store
+
+Analysis of the consolidated dataset indicates that the Japan store generates a higher overall sales volume compared to the Myanmar store. This outcome is primarily attributed to a greater frequency of transactions and a larger customer base in the Japan dataset. These patterns suggest stronger market activity and higher purchasing power within the Japanese market.
+
+Insight 2: Impact of Currency Standardization on Price Comparability
+
+Initial observations show that item prices in the Myanmar store appear lower due to being recorded in United States dollars (USD). Following the transformation stage, all prices were converted into a common currency (Japanese Yen), resulting in more comparable price levels across both stores. This finding underscores the importance of currency standardization when conducting cross-country data analysis.
+
+Insight 3: Consistently High-Performing Products Across Markets
+
+Item-level analysis reveals that certain products consistently record high sales volumes in both the Japan and Myanmar stores. The repeated occurrence of these products in transaction records indicates stable demand across markets, suggesting that these items represent core products with strong cross-market appeal.
+
+Insight 4: Variations in Customer Purchasing Behavior by Location
+
+The results indicate notable differences in purchasing behavior between customers in the two store locations. Customers in the Japan store tend to engage in more frequent transactions with lower average spending per purchase, whereas customers in the Myanmar store exhibit fewer transactions with higher average transaction values after currency conversion. These differences may be influenced by local economic conditions and consumer preferences.
+
+Insight 5: Improvement in Data Quality Through the Transformation Layer
+
+The transformation process substantially enhanced data quality by removing missing values, eliminating duplicate records, and correcting inconsistent data types. As a result, the final presentation dataset is clean, standardized, and suitable for analytical purposes. This demonstrates the effectiveness of the ETL pipeline in preparing reliable data for comparative analysis.
