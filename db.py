@@ -1,13 +1,16 @@
 import os
 from sqlalchemy import create_engine
 
-def get_connection():
-    """Return a SQLAlchemy engine connection to PostgreSQL."""
-    database_url = os.environ.get("DATABASE_URL")
-    if not database_url:
-        raise RuntimeError("DATABASE_URL environment variable is not set.")
-    # SQLAlchemy requires postgresql:// not postgres://
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
-    engine = create_engine(database_url)
-    return engine.connect()
+_engine = None
+
+def get_engine():
+    """Return a shared SQLAlchemy engine for PostgreSQL."""
+    global _engine
+    if _engine is None:
+        database_url = os.environ.get("DATABASE_URL")
+        if not database_url:
+            raise RuntimeError("DATABASE_URL environment variable is not set.")
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
+        _engine = create_engine(database_url)
+    return _engine
