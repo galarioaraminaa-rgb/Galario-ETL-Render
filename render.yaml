@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: galario-etl
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        # Paste your Render PostgreSQL internal URL here, e.g.:
+        # postgresql://db_nako_user:PASSWORD@dpg-xxxx-a.singapore-postgres.render.com/db_nako
+        value: postgresql://db_nako_user:3halkU77mrx0Gaw8HxpVqoDGDDNSDCpc@dpg-d7ngs4vlk1mc73d4p9m0-a.singapore-postgres.render.com/db_nako
+      - key: PORT
+        value: "5000"
+    healthCheckPath: /
+    autoDeploy: true
